@@ -1,0 +1,27 @@
+// Tabs.scss
+
+.tabList {
+  position: fixed;
+  list-style-type: none;
+  background-color: white;
+  display: flex;
+  padding: 0;
+  margin: 0;
+  font-family: Helvetica, sans-serif;
+  font-weight: 200;
+  font-size: 18px;
+  letter-spacing: 1.92px;
+  margin-bottom: 20px;
+
+  .tabItem {
+    cursor: pointer;
+    padding: 7px 7px;
+    transition: background-color 0.3s ease;
+
+    &.active {
+      background-color: #fff;
+      border-bottom: 2px solid #007bff;
+      font-weight: 400;
+    }
+  }
+}
