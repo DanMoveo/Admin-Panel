@@ -19,6 +19,7 @@ type Restaurant = {
 type Chef = {
   id: string;
   name: string;
+  image: string;
 };
 
 type Dishes = {
@@ -51,6 +52,7 @@ function HomePage() {
     chefId: {
       id: "",
       name: "",
+      image: "",
     },
     rate: 0,
   });
@@ -58,6 +60,7 @@ function HomePage() {
   const [newChef, setNewChef] = useState<Chef>({
     id: "",
     name: "",
+    image: "",
   });
 
   const [selectedRestaurant, setselectedRestaurant] = useState<Restaurant>({
@@ -67,6 +70,7 @@ function HomePage() {
     chefId: {
       id: "",
       name: "",
+      image: "",
     },
     rate: 0,
   });
@@ -74,6 +78,7 @@ function HomePage() {
   const [selectedChef, setSelectedChef] = useState<Chef>({
     id: "",
     name: "",
+    image: "",
   });
 
   const [selectedDish, setSelectedDish] = useState<Dishes>({
@@ -113,6 +118,7 @@ function HomePage() {
         case 1: // Chefs
           response = await axios.get<Chef[]>(`${API_BASE_URL}/chefs/`);
           setChefs(response.data);
+          console.log(response.data)
           break;
         case 2: // Dishes
           response = await axios.get<Dishes[]>(`${API_BASE_URL}/dishes/`);
@@ -168,30 +174,74 @@ function HomePage() {
             alert("Please fill in all required fields.");
             return;
           }
-          const restaurantResponse = await axios.post(
-            `${API_BASE_URL}/restaurants/`,
+
+          const restaurantData = {
+            image: newRestaurant.image,
+            name: newRestaurant.name,
+            chefId: newRestaurant.chefId.id,
+            rate: newRestaurant.rate,
+          };
+
+          const token = localStorage.getItem("token") as string;
+          console.log(token);
+          const restaurantResponse = await fetch(
+            "http://localhost:5000/admins/restaurants",
             {
-              image: newRestaurant.image,
-              name: newRestaurant.name,
-              chefId: newRestaurant.chefId.id,
-              rate: newRestaurant.rate,
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify(restaurantData),
             }
           );
-          console.log(
-            "Response from server (Restaurant):",
-            restaurantResponse.data
-          );
+
+          if (restaurantResponse.ok) {
+            // Restaurant created successfully
+            alert("Restaurant created successfully");
+          } else {
+            // Handle error response
+            alert("Failed to create restaurant");
+          }
+
           break;
         case 1: // Chefs
           if (!newChef.name) {
             alert("Please fill in all required fields.");
             return;
           }
-          const chefResponse = await axios.post(`${API_BASE_URL}/chefs/`, {
-            name: newChef.name,
-          });
-          console.log("Response from server (Chef):", chefResponse.data);
+          // const chefResponse = await axios.post(`${API_BASE_URL}/chefs/`, {
+          //   name: newChef.name,
+          // });
+          // console.log("Response from server (Chef):", chefResponse.data);
+          // break;
+
+          const chefData = { name: newChef.name, image: newChef.image };
+          const token2 = localStorage.getItem("token") as string;
+          console.log(token2);
+          const chefResponse = await fetch(
+            "http://localhost:5000/admins/chefs",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token2}`,
+              },
+              body: JSON.stringify(chefData),
+            }
+          );
+          console.log(chefResponse);
+
+          if (chefResponse.ok) {
+            // Chef created successfully
+            alert("Restaurant created successfully");
+          } else {
+            // Handle error response
+            alert("Failed to create chef");
+          }
+
           break;
+
         case 2: // Dishes
           // Implement logic to send a POST request to create a new dish
           break;
@@ -234,13 +284,41 @@ function HomePage() {
 
       if (isChef) {
         // Update chef
-        if (!selectedChef.name) {
+        if (!selectedChef.name ||
+          !selectedChef.image
+          ) {
           alert("Please fill in all required fields.");
           return;
         }
-        await axios.put(`${API_BASE_URL}/chefs/chef?id=${selectedId}`, {
+
+        const token = localStorage.getItem("token");
+        console.log(token);
+
+        const updatedChefData = {
           name: selectedChef.name,
-        });
+          image: selectedChef.image,
+        };
+        console.log(updatedChefData);
+
+        const chefResponse = await fetch(
+          `${API_BASE_URL}/admins/chefs/${clickedDivId}`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(updatedChefData),
+          }
+        );
+
+        if (chefResponse.ok) {
+          // Chef created successfully
+          alert("Chef update successfully");
+        } else {
+          // Handle error response
+          alert("Failed to update chef");
+        }
       } else if (isDish) {
         // Update dish
         if (
@@ -272,15 +350,36 @@ function HomePage() {
           alert("Please fill in all required fields.");
           return;
         }
-        await axios.put(
-          `${API_BASE_URL}/restaurants/restaurant?id=${selectedId}`,
+
+        const token = localStorage.getItem("token");
+        console.log(token);
+
+        const updatedRestaurantData = {
+          image: selectedRestaurant.image,
+          name: selectedRestaurant.name,
+          chefId: selectedRestaurant.chefId.id,
+          rate: selectedRestaurant.rate,
+        };
+
+        const restaurantResponse = await fetch(
+          `${API_BASE_URL}/admins/restaurants/${clickedDivId}`,
           {
-            image: selectedRestaurant.image,
-            name: selectedRestaurant.name,
-            chefId: selectedRestaurant.chefId.id,
-            rate: selectedRestaurant.rate,
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(updatedRestaurantData),
           }
         );
+
+        if (restaurantResponse.ok) {
+          // Restaurant created successfully
+          alert("Restaurant update successfully");
+        } else {
+          // Handle error response
+          alert("Failed to update restaurant");
+        }
       }
 
       fetchData(activeTab);
@@ -298,10 +397,26 @@ function HomePage() {
             return;
           }
 
-          await axios.delete(
-            `${API_BASE_URL}/restaurants/restaurant?id=${clickedDivId}`
+          const token = localStorage.getItem("token");
+          console.log(token);
+          const restaurantResponse = await fetch(
+            `${API_BASE_URL}/admins/restaurants/${clickedDivId}`,
+            {
+              method: "DELETE",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+            }
           );
-          console.log("Restaurant deleted successfully.");
+
+          if (restaurantResponse.ok) {
+            // Restaurant deleted successfully
+            alert("Restaurant deleted successfully");
+          } else {
+            // Handle error response
+            alert("Failed to deleted restaurant");
+          }
 
           setselectedRestaurant({
             id: "",
@@ -310,13 +425,45 @@ function HomePage() {
             chefId: {
               id: "",
               name: "",
+              image: "",
             },
             rate: 0,
           });
           fetchData(activeTab);
           break;
         case 1: // Chefs
-          // Implement logic to send a DELETE request to delete a chef
+          if (!clickedDivId) {
+            console.error("No chef selected for deletion.");
+            return;
+          }
+
+          const token1 = localStorage.getItem("token");
+          console.log(token1);
+          const chefResponse = await fetch(
+            `${API_BASE_URL}/admins/chefs/${clickedDivId}`,
+            {
+              method: "DELETE",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token1}`,
+              },
+            }
+          );
+
+          if (chefResponse.ok) {
+            //  Chef deleted successfully
+            alert("Restaurant deleted successfully");
+          } else {
+            // Handle error response
+            alert("Failed to deleted chef");
+          }
+
+          setSelectedChef({
+            id: "",
+            name: "",
+            image: "",
+          });
+          fetchData(activeTab);
           break;
         case 2: // Dishes
           // Implement logic to send a DELETE request to delete a dish
@@ -369,6 +516,8 @@ function HomePage() {
                   onClick={() => handleCardClick(chef)}
                 >
                   <span className="cardText">name: {chef.name}</span>
+                  <span className="cardText">image: {chef.image}</span>
+
                 </div>
               ))}
             </div>
@@ -552,6 +701,13 @@ function HomePage() {
                     value={newChef.name}
                     onChange={(e) => handleInputChange(e, "chef")}
                   />
+                  <input
+                    type="text"
+                    name="image"
+                    placeholder="Image"
+                    value={newChef.image}
+                    onChange={(e) => handleInputChange(e, "chef")}
+                  />
                   <button onClick={() => handleNewClick()}>New</button>
                 </div>
                 <div className="actionContainer">
@@ -565,6 +721,18 @@ function HomePage() {
                       setSelectedChef({
                         ...selectedChef,
                         name: e.target.value,
+                      })
+                    }
+                  />
+                  <input
+                    type="text"
+                    name="image"
+                    placeholder="Image"
+                    value={selectedChef?.image || ""}
+                    onChange={(e) =>
+                      setSelectedChef({
+                        ...selectedChef,
+                        image: e.target.value,
                       })
                     }
                   />
