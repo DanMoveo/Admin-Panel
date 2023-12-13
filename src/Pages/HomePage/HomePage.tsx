@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import Tabs from "../../Components/Tabs/Tabs";
 import axios from "axios";
-
+import Card from "../../Components/Card/Card";
 const API_BASE_URL = "http://localhost:5000";
 
 // Define types
@@ -118,7 +118,7 @@ function HomePage() {
         case 1: // Chefs
           response = await axios.get<Chef[]>(`${API_BASE_URL}/chefs/`);
           setChefs(response.data);
-          console.log(response.data)
+          console.log(response.data);
           break;
         case 2: // Dishes
           response = await axios.get<Dishes[]>(`${API_BASE_URL}/dishes/`);
@@ -163,17 +163,38 @@ function HomePage() {
 
   async function handleNewClick() {
     try {
+      const validateFields = (fields: any[]) => {
+        if (fields.some((field) => !field)) {
+          alert("Please fill in all required fields.");
+          return true;
+        }
+        return false;
+      };
+
+      const postData = async (url: string, data: any) => {
+        const token = localStorage.getItem("token") as string;
+        const response = await fetch(`${API_BASE_URL}/${url}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(data),
+        });
+        return response;
+      };
+
       switch (activeTab) {
         case 0: // Restaurants
           if (
-            !newRestaurant.image ||
-            !newRestaurant.name ||
-            !newRestaurant.chefId.id ||
-            !newRestaurant.rate
-          ) {
-            alert("Please fill in all required fields.");
+            validateFields([
+              newRestaurant.image,
+              newRestaurant.name,
+              newRestaurant.chefId.id,
+              newRestaurant.rate,
+            ])
+          )
             return;
-          }
 
           const restaurantData = {
             image: newRestaurant.image,
@@ -181,75 +202,31 @@ function HomePage() {
             chefId: newRestaurant.chefId.id,
             rate: newRestaurant.rate,
           };
-
-          const token = localStorage.getItem("token") as string;
-          console.log(token);
-          const restaurantResponse = await fetch(
-            "http://localhost:5000/admins/restaurants",
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`,
-              },
-              body: JSON.stringify(restaurantData),
-            }
+          const restaurantResponse = await postData(
+            "admins/restaurants",
+            restaurantData
           );
-
-          if (restaurantResponse.ok) {
-            // Restaurant created successfully
-            alert("Restaurant created successfully");
-          } else {
-            // Handle error response
-            alert("Failed to create restaurant");
-          }
-
+          restaurantResponse.ok
+            ? alert("Restaurant created successfully")
+            : alert("Failed to create restaurant");
           break;
+
         case 1: // Chefs
-          if (!newChef.name) {
-            alert("Please fill in all required fields.");
-            return;
-          }
-          // const chefResponse = await axios.post(`${API_BASE_URL}/chefs/`, {
-          //   name: newChef.name,
-          // });
-          // console.log("Response from server (Chef):", chefResponse.data);
-          // break;
-
+          if (validateFields([newChef.name])) return;
           const chefData = { name: newChef.name, image: newChef.image };
-          const token2 = localStorage.getItem("token") as string;
-          console.log(token2);
-          const chefResponse = await fetch(
-            "http://localhost:5000/admins/chefs",
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token2}`,
-              },
-              body: JSON.stringify(chefData),
-            }
-          );
-          console.log(chefResponse);
-
-          if (chefResponse.ok) {
-            // Chef created successfully
-            alert("Restaurant created successfully");
-          } else {
-            // Handle error response
-            alert("Failed to create chef");
-          }
-
+          const chefResponse = await postData("admins/chefs", chefData);
+          chefResponse.ok
+            ? alert("Chef created successfully")
+            : alert("Failed to create chef");
           break;
 
         case 2: // Dishes
-          // Implement logic to send a POST request to create a new dish
           break;
+
         default:
           break;
       }
 
-      // After the POST request is successful, you can fetch updated data if needed
       fetchData(activeTab);
     } catch (error) {
       console.error(error);
@@ -284,9 +261,7 @@ function HomePage() {
 
       if (isChef) {
         // Update chef
-        if (!selectedChef.name ||
-          !selectedChef.image
-          ) {
+        if (!selectedChef.name || !selectedChef.image) {
           alert("Please fill in all required fields.");
           return;
         }
@@ -374,14 +349,11 @@ function HomePage() {
         );
 
         if (restaurantResponse.ok) {
-          // Restaurant created successfully
           alert("Restaurant update successfully");
         } else {
-          // Handle error response
           alert("Failed to update restaurant");
         }
       }
-
       fetchData(activeTab);
     } catch (error) {
       console.error(error);
@@ -485,62 +457,39 @@ function HomePage() {
           {activeTab === 0 && (
             <div>
               {restaurants.map((restaurant) => (
-                <div
+                <Card
                   key={restaurant.id}
-                  className={`cardContainer ${
-                    isCardClicked(restaurant.id, false, false) ? "clicked" : ""
-                  }`}
+                  data={restaurant}
+                  isRestaurant
+                  isClicked={isCardClicked(restaurant.id, false, false)}
                   onClick={() => handleCardClick(restaurant)}
-                >
-                  <span className="cardText">image: {restaurant.image}</span>
-                  <span className="cardText">name: {restaurant.name}</span>
-                  <span className="cardText">
-                    chef:{" "}
-                    {restaurant.chefId
-                      ? restaurant.chefId.name
-                      : "Unknown Chef"}
-                  </span>
-                  <span className="cardText">rate: {restaurant.rate}</span>
-                </div>
+                />
               ))}
             </div>
           )}
           {activeTab === 1 && (
             <div>
               {chefs.map((chef) => (
-                <div
+                <Card
                   key={chef.id}
-                  className={`cardContainer ${
-                    isCardClicked(chef.id, true, false) ? "clicked" : ""
-                  }`}
+                  data={chef}
+                  isChef
+                  isClicked={isCardClicked(chef.id, true, false)}
                   onClick={() => handleCardClick(chef)}
-                >
-                  <span className="cardText">name: {chef.name}</span>
-                  <span className="cardText">image: {chef.image}</span>
-
-                </div>
+                />
               ))}
             </div>
           )}
           {activeTab === 2 && (
             <div>
               {dishes.map((dish) => (
-                <div
+                <Card
                   key={dish.id}
-                  className={`cardContainer ${
-                    isCardClicked(dish.id, false, true) ? "clicked" : ""
-                  }`}
+                  data={dish}
+                  isDish
+                  isClicked={isCardClicked(dish.id, false, true)}
                   onClick={() => handleCardClick(dish)}
-                >
-                  <span className="cardText">name: {dish.name}</span>
-                  <span className="cardText">category: {dish.category}</span>
-                  <span className="cardText">
-                    description: {dish.description}
-                  </span>
-                  <span className="cardText">icons: {dish.icons}</span>
-                  <span className="cardText">image: {dish.image}</span>
-                  <span className="cardText">price: {dish.price}</span>
-                </div>
+                />
               ))}
             </div>
           )}

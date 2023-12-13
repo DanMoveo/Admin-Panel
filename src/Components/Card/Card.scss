@@ -1,0 +1,31 @@
+
+.cardContainer {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+    margin: 10px;
+    padding-left: 20px;
+    transition: transform 0.2s ease-in-out;
+
+    &.clicked {
+      background-color: #f0f0f0; 
+    }
+
+    &:hover {
+      transform: scale(1.05);
+    }
+
+    .cardText {
+      font-family: Helvetica, sans-serif;
+      font-weight: 400;
+      font-size: 16px;
+      margin: 8px 0;
+
+      &:first-child {
+        font-size: 18px;
+        font-weight: 500;
+      }
+    }
+  }
