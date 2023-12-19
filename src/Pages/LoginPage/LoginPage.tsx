@@ -1,12 +1,16 @@
 import React, { useState } from "react";
 import "./LoginPage.scss";
+import { useNavigate } from "react-router-dom";
+import { RoutePaths } from "../../shared/constants";
 
-function LoginPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-
-  const handleLogin = async () => {
+const handleLogin = async (email: string, password: string) => {
+  if (!email || !password) {
+    alert("Please fill in both email and password to login.");
+    return;
+  }
+  else {
     try {
+      if (!email || !password) return;
       const response = await fetch("http://localhost:5000/admins/login", {
         method: "POST",
         headers: {
@@ -20,13 +24,24 @@ function LoginPage() {
         const token = data.token;
 
         localStorage.setItem("token", token);
-
-        window.location.href = "/HomePage";
       } else {
         console.error("Login failed");
       }
     } catch (error) {
       console.error("An error occurred:", error);
+    }
+  }
+};
+
+function LoginPage() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const navigate = useNavigate();
+
+  const handleLoginBtnClick = async () => {
+    await handleLogin(email, password);
+    if (email && password) {
+      navigate(RoutePaths.HomePage);
     }
   };
 
@@ -46,7 +61,7 @@ function LoginPage() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
-        <button className="loginButton" onClick={handleLogin}>
+        <button className="loginButton" onClick={handleLoginBtnClick}>
           Login
         </button>
         <p className="register-text">

@@ -20,7 +20,9 @@ const Card: React.FC<CardProps> = ({
 }) => {
   const renderText = (label: string, value: any) => (
     <span key={label} className="cardText">
-      {label}: {value}
+      {label === "icons"
+        ? `${label}: ${value.join(" ")}`
+        : `${label}: ${value} `}
     </span>
   );
 
@@ -30,8 +32,8 @@ const Card: React.FC<CardProps> = ({
     "image",
     "category",
     "description",
-    "icons",
     "price",
+    "icons",
   ];
   const restaurantLabels = ["name", "image", "chef", "rate"];
 

@@ -1,102 +1,80 @@
 import "./HomePage.scss";
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import Tabs from "../../Components/Tabs/Tabs";
 import axios from "axios";
 import Card from "../../Components/Card/Card";
+import {
+  Restaurant,
+  Chef,
+  Dish,
+  DecodedToken,
+} from "../../models/Restaurant.interfaces";
+import {
+  createRestaurant,
+  deleteRestaurant,
+  fetchRestaurants,
+  generateInitialRestaurant,
+} from "../../services/Restaurant.service";
+import { jwtDecode } from "jwt-decode";
+import {
+  createDish,
+  fetchDishes,
+  generateInitialDish,
+} from "../../services/Dish.service";
+import {
+  createChef,
+  deleteChef,
+  fetchChefs,
+  generateInitialChef,
+} from "../../services/Chef.service";
+import SignOutButton from "../../Components/SignOutButton/SignOutButton";
+import { RoutePaths } from "../../shared/constants";
+
 const API_BASE_URL = "http://localhost:5000";
-
-// Define types
-
-type Restaurant = {
-  id: string;
-  image: string;
-  name: string;
-  chefId: Chef;
-  rate: number;
-};
-
-type Chef = {
-  id: string;
-  name: string;
-  image: string;
-};
-
-type Dishes = {
-  id: string;
-  image: string;
-  name: string;
-  description: string;
-  price: number;
-  category: string;
-  icons: string[];
-};
-
 function HomePage() {
   // State variables
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [chefs, setChefs] = useState<Chef[]>([]);
-  const [dishes, setDishes] = useState<Dishes[]>([]);
+  const [dishes, setDishes] = useState<Dish[]>([]);
   const tabs: string[] = ["Restaurants", "Chefs", "Dishes"];
   const { type } = useParams<{ type?: string }>();
   const initialActiveTab = type ? tabs.indexOf(type) : 0;
   const [activeTab, setActiveTab] = useState<number>(initialActiveTab);
   const [allChefs, setAllChefs] = useState<Chef[]>([]);
-
   const [clickedDivId, setClickedDivId] = useState<string | null>(null);
+  const [allDishes, setAllDishes] = useState<Dish[]>([]);
+  const [allDishes2, setAllDishes2] = useState<Dish[]>([]);
+  const icons = ["spicy", "vegan", "vegetarian"];
+  const [role, setRole] = useState<string>();
+  const [newRestaurant, setNewRestaurant] = useState<Restaurant>(
+    generateInitialRestaurant()
+  );
+  const [newChef, setNewChef] = useState<Chef>(generateInitialChef);
+  const [newDish, setNewDish] = useState<Dish>(generateInitialDish);
+  const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant>(
+    generateInitialRestaurant
+  );
+  const [selectedChef, setSelectedChef] = useState<Chef>(generateInitialChef);
+  const [selectedDish, setSelectedDish] = useState<Dish>(generateInitialDish);
+  const navigate = useNavigate();
 
-  const [newRestaurant, setNewRestaurant] = useState<Restaurant>({
-    id: "",
-    image: "",
-    name: "",
-    chefId: {
-      id: "",
-      name: "",
-      image: "",
-    },
-    rate: 0,
-  });
-
-  const [newChef, setNewChef] = useState<Chef>({
-    id: "",
-    name: "",
-    image: "",
-  });
-
-  const [selectedRestaurant, setselectedRestaurant] = useState<Restaurant>({
-    id: "",
-    image: "",
-    name: "",
-    chefId: {
-      id: "",
-      name: "",
-      image: "",
-    },
-    rate: 0,
-  });
-
-  const [selectedChef, setSelectedChef] = useState<Chef>({
-    id: "",
-    name: "",
-    image: "",
-  });
-
-  const [selectedDish, setSelectedDish] = useState<Dishes>({
-    id: "",
-    image: "",
-    name: "",
-    description: "",
-    price: 0,
-    category: "",
-    icons: [],
-  });
-
-  // Fetch data and handle tab changes
   useEffect(() => {
+    const token = localStorage.getItem("token") as string;
+    if (!token) {
+      console.error("Token is not present");
+      navigate(RoutePaths.Login);
+      return;
+    }
+    console.log(token);
+    const decoded = jwtDecode(token) as DecodedToken;
+    setRole(decoded.roles[0]);
     async function fetchChefs() {
       try {
         const response = await axios.get<Chef[]>(`${API_BASE_URL}/chefs/`);
         setAllChefs(response.data);
+        const response1 = await axios.get<Dish[]>(`${API_BASE_URL}/dishes/`);
+        setAllDishes(response1.data);
       } catch (error) {
         console.error(error);
       }
@@ -107,22 +85,19 @@ function HomePage() {
 
   async function fetchData(tabIndex: number) {
     try {
-      let response;
+      let data;
       switch (tabIndex) {
         case 0: // Restaurants
-          response = await axios.get<Restaurant[]>(
-            `${API_BASE_URL}/restaurants/`
-          );
-          setRestaurants(response.data);
+          data = await fetchRestaurants();
+          setRestaurants(data);
           break;
         case 1: // Chefs
-          response = await axios.get<Chef[]>(`${API_BASE_URL}/chefs/`);
-          setChefs(response.data);
-          console.log(response.data);
+          data = await fetchChefs();
+          setChefs(data);
           break;
         case 2: // Dishes
-          response = await axios.get<Dishes[]>(`${API_BASE_URL}/dishes/`);
-          setDishes(response.data);
+          data = await fetchDishes();
+          setDishes(data);
           break;
         default:
           break;
@@ -132,16 +107,24 @@ function HomePage() {
     }
   }
 
-  // Event handlers
   const handleTabClick = (index: number) => {
     setActiveTab(index);
   };
 
-  function handleCardClick(item: Restaurant | Chef | Dishes) {
+  async function handleCardClick(item: Restaurant | Chef | Dish) {
     setClickedDivId(item.id);
     if ("chefId" in item) {
       // It's a restaurant
-      setselectedRestaurant(item);
+      setSelectedRestaurant(item);
+      console.log("select restaurant" + item.dishes);
+
+      const response2 = await axios.get<Restaurant>(
+        `${API_BASE_URL}/restaurants/restaurant/${item.id}`
+      );
+      const dishesArray = response2.data.dishes;
+      const res = JSON.stringify(dishesArray);
+      const parsedRes = JSON.parse(res);
+      setAllDishes2(parsedRes);
     } else if ("icons" in item) {
       // It's a dish
       setSelectedDish(item);
@@ -171,19 +154,6 @@ function HomePage() {
         return false;
       };
 
-      const postData = async (url: string, data: any) => {
-        const token = localStorage.getItem("token") as string;
-        const response = await fetch(`${API_BASE_URL}/${url}`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(data),
-        });
-        return response;
-      };
-
       switch (activeTab) {
         case 0: // Restaurants
           if (
@@ -201,11 +171,10 @@ function HomePage() {
             name: newRestaurant.name,
             chefId: newRestaurant.chefId.id,
             rate: newRestaurant.rate,
+            dishes: newRestaurant.dishes,
           };
-          const restaurantResponse = await postData(
-            "admins/restaurants",
-            restaurantData
-          );
+          console.log(restaurantData);
+          const restaurantResponse = await createRestaurant(restaurantData);
           restaurantResponse.ok
             ? alert("Restaurant created successfully")
             : alert("Failed to create restaurant");
@@ -214,15 +183,39 @@ function HomePage() {
         case 1: // Chefs
           if (validateFields([newChef.name])) return;
           const chefData = { name: newChef.name, image: newChef.image };
-          const chefResponse = await postData("admins/chefs", chefData);
+          const chefResponse = await createChef(chefData);
           chefResponse.ok
             ? alert("Chef created successfully")
             : alert("Failed to create chef");
           break;
 
         case 2: // Dishes
-          break;
+          if (
+            validateFields([
+              newDish.name,
+              newDish.image,
+              newDish.description,
+              newDish.price,
+              newDish.icons,
+              newDish.category,
+            ])
+          )
+            return;
 
+          const dishData = {
+            name: newDish.name,
+            image: newDish.image,
+            category: newDish.category,
+            description: newDish.description,
+            icons: newDish.icons,
+            price: Number(newDish.price),
+          };
+          console.log(dishData);
+          const dishResponse = await createDish(dishData);
+          dishResponse.ok
+            ? alert("Dish created successfully")
+            : alert("Failed to create dish");
+          break;
         default:
           break;
       }
@@ -234,31 +227,38 @@ function HomePage() {
   }
 
   const handleInputChange = (
-    event: React.ChangeEvent<HTMLInputElement>,
+    event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
     inputType: string
   ) => {
     const { name, value } = event.target;
-    if (inputType === "chef") {
-      // Handle chef input changes
-      setNewChef((prevChef) => ({
-        ...prevChef,
-        [name]: value,
-      }));
 
-      console.log(newChef);
-    } else {
-      // Handle other input changes
-      setNewRestaurant((prevRestaurant) => ({
-        ...prevRestaurant,
-        [name]: value,
-      }));
+    switch (inputType) {
+      case "chef":
+        // Handle chef input changes
+        setNewChef((prevChef) => ({
+          ...prevChef,
+          [name]: value,
+        }));
+        break;
+      case "dish":
+        // Handle dish input changes
+        setNewDish((prevDish) => ({
+          ...prevDish,
+          [name]: value,
+        }));
+        break;
+      default:
+        // Handle other input changes
+        setNewRestaurant((prevRestaurant) => ({
+          ...prevRestaurant,
+          [name]: value,
+        }));
+        break;
     }
   };
 
   async function handleUpdateClick(isChef: boolean, isDish: boolean) {
     try {
-      let selectedId = clickedDivId;
-
       if (isChef) {
         // Update chef
         if (!selectedChef.name || !selectedChef.image) {
@@ -301,19 +301,40 @@ function HomePage() {
           !selectedDish.name ||
           !selectedDish.description ||
           !selectedDish.price ||
-          !selectedDish.category
+          !selectedDish.category ||
+          !selectedDish.icons
         ) {
           alert("Please fill in all required fields.");
           return;
         }
-        await axios.put(`${API_BASE_URL}/dishes/dish?id=${selectedId}`, {
+
+        const token = localStorage.getItem("token");
+
+        const updatedDishData = {
           image: selectedDish.image,
           name: selectedDish.name,
           description: selectedDish.description,
           price: selectedDish.price,
           category: selectedDish.category,
           icons: selectedDish.icons,
-        });
+        };
+        const restaurantResponse = await fetch(
+          `${API_BASE_URL}/admins/dishes/${clickedDivId}`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(updatedDishData),
+          }
+        );
+
+        if (restaurantResponse.ok) {
+          alert("Dish update successfully");
+        } else {
+          alert("Failed to update dish");
+        }
       } else {
         // Update restaurant
         if (
@@ -334,8 +355,9 @@ function HomePage() {
           name: selectedRestaurant.name,
           chefId: selectedRestaurant.chefId.id,
           rate: selectedRestaurant.rate,
+          dishes: selectedRestaurant.dishes,
         };
-
+        console.log(updatedRestaurantData);
         const restaurantResponse = await fetch(
           `${API_BASE_URL}/admins/restaurants/${clickedDivId}`,
           {
@@ -370,38 +392,24 @@ function HomePage() {
           }
 
           const token = localStorage.getItem("token");
-          console.log(token);
-          const restaurantResponse = await fetch(
-            `${API_BASE_URL}/admins/restaurants/${clickedDivId}`,
-            {
-              method: "DELETE",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          );
 
-          if (restaurantResponse.ok) {
-            // Restaurant deleted successfully
-            alert("Restaurant deleted successfully");
-          } else {
-            // Handle error response
-            alert("Failed to deleted restaurant");
+          if (!token) {
+            console.error("No token found.");
+            return;
           }
 
-          setselectedRestaurant({
-            id: "",
-            image: "",
-            name: "",
-            chefId: {
-              id: "",
-              name: "",
-              image: "",
-            },
-            rate: 0,
-          });
-          fetchData(activeTab);
+          const isRestaurantDeleted = await deleteRestaurant(
+            clickedDivId,
+            token
+          );
+
+          if (isRestaurantDeleted) {
+            alert("Restaurant deleted successfully");
+            setSelectedRestaurant(generateInitialRestaurant());
+            fetchData(activeTab);
+          } else {
+            alert("Failed to delete restaurant");
+          }
           break;
         case 1: // Chefs
           if (!clickedDivId) {
@@ -410,32 +418,21 @@ function HomePage() {
           }
 
           const token1 = localStorage.getItem("token");
-          console.log(token1);
-          const chefResponse = await fetch(
-            `${API_BASE_URL}/admins/chefs/${clickedDivId}`,
-            {
-              method: "DELETE",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token1}`,
-              },
-            }
-          );
 
-          if (chefResponse.ok) {
-            //  Chef deleted successfully
-            alert("Restaurant deleted successfully");
-          } else {
-            // Handle error response
-            alert("Failed to deleted chef");
+          if (!token1) {
+            console.error("No token found.");
+            return;
           }
 
-          setSelectedChef({
-            id: "",
-            name: "",
-            image: "",
-          });
-          fetchData(activeTab);
+          const isChefDeleted = await deleteChef(clickedDivId, token1);
+
+          if (isChefDeleted) {
+            alert("Chef deleted successfully");
+            setSelectedChef(generateInitialChef());
+            fetchData(activeTab);
+          } else {
+            alert("Failed to delete chef");
+          }
           break;
         case 2: // Dishes
           // Implement logic to send a DELETE request to delete a dish
@@ -494,296 +491,481 @@ function HomePage() {
             </div>
           )}
         </div>
-
-        <div className="actionsContainer">
-          <div className="boxesContainer">
-            {activeTab === 0 && (
-              <>
-                <div className="actionContainer">
-                  <span className="actionTitel">NEW</span>
-                  <input
-                    type="text"
-                    name="image"
-                    placeholder="Image"
-                    value={newRestaurant.image}
-                    onChange={(e) => handleInputChange(e, "restaurant")}
-                  />
-                  <input
-                    type="text"
-                    name="name"
-                    placeholder="Name"
-                    value={newRestaurant.name}
-                    onChange={(e) => handleInputChange(e, "restaurant")}
-                  />
-                  <select
-                    name="chefId"
-                    value={newRestaurant.chefId.id}
-                    onChange={(e) =>
-                      setNewRestaurant((prevRestaurant) => ({
-                        ...prevRestaurant,
-                        chefId: {
-                          ...prevRestaurant.chefId,
-                          id: e.target.value,
-                        },
-                      }))
-                    }
-                  >
-                    {newRestaurant.chefId.id ? null : (
-                      <option value="">Select a Chef</option>
-                    )}
-
-                    {allChefs.map((chef) => (
-                      <option key={chef.id} value={chef.id}>
-                        {chef.name}
-                      </option>
-                    ))}
-                  </select>
-
-                  <select
-                    name="rate"
-                    value={newRestaurant.rate}
-                    onChange={(e) =>
-                      setNewRestaurant((prevRestaurant) => ({
-                        ...prevRestaurant,
-                        rate: parseInt(e.target.value),
-                      }))
-                    }
-                  >
-                    {newRestaurant.rate ? null : (
-                      <option value="">Select a Rate</option>
-                    )}
-                    <option value="1">1</option>
-                    <option value="2">2</option>
-                    <option value="3">3</option>
-                    <option value="4">4</option>
-                    <option value="5">5</option>
-                  </select>
-
-                  <button onClick={() => handleNewClick()}>New</button>
-                </div>
-
-                <div className="actionContainer">
-                  <span className="actionTitel">Update</span>
-                  <input
-                    type="text"
-                    name="image"
-                    placeholder="Image"
-                    value={selectedRestaurant?.image || ""}
-                    onChange={(e) =>
-                      setselectedRestaurant({
-                        ...selectedRestaurant,
-                        image: e.target.value,
-                      })
-                    }
-                  />
-                  <input
-                    type="text"
-                    name="name"
-                    placeholder="Name"
-                    value={selectedRestaurant?.name || ""}
-                    onChange={(e) =>
-                      setselectedRestaurant({
-                        ...selectedRestaurant,
-                        name: e.target.value,
-                      })
-                    }
-                  />
-                  <select
-                    name="chefId"
-                    value={selectedRestaurant.chefId.id}
-                    onChange={(e) =>
-                      setselectedRestaurant((prevRestaurant) => ({
-                        ...prevRestaurant,
-                        chefId: {
-                          ...prevRestaurant.chefId,
-                          id: e.target.value,
-                          name:
-                            allChefs.find((chef) => chef.id === e.target.value)
-                              ?.name || "",
-                        },
-                      }))
-                    }
-                  >
-                    <option value="">Select a Chef</option>
-                    {allChefs.map((chef) => (
-                      <option key={chef.id} value={chef.id}>
-                        {chef.name}
-                      </option>
-                    ))}
-                  </select>
-
-                  <select
-                    name="rate"
-                    value={selectedRestaurant.rate.toString()}
-                    onChange={(e) =>
-                      setselectedRestaurant((prevRestaurant) => ({
-                        ...prevRestaurant,
-                        rate: parseInt(e.target.value),
-                      }))
-                    }
-                  >
-                    {selectedRestaurant.rate ? null : (
-                      <option value="">Select a Rate</option>
-                    )}
-                    <option value="1">1</option>
-                    <option value="2">2</option>
-                    <option value="3">3</option>
-                    <option value="4">4</option>
-                    <option value="5">5</option>
-                  </select>
-
-                  <button onClick={() => handleUpdateClick(false, false)}>
-                    Update
-                  </button>
-                </div>
-              </>
-            )}
-
-            {activeTab === 1 && (
-              <>
-                <div className="actionContainer">
-                  <span className="actionTitel">NEW</span>
-                  <input
-                    type="text"
-                    name="name"
-                    placeholder="Name"
-                    value={newChef.name}
-                    onChange={(e) => handleInputChange(e, "chef")}
-                  />
-                  <input
-                    type="text"
-                    name="image"
-                    placeholder="Image"
-                    value={newChef.image}
-                    onChange={(e) => handleInputChange(e, "chef")}
-                  />
-                  <button onClick={() => handleNewClick()}>New</button>
-                </div>
-                <div className="actionContainer">
-                  <span className="actionTitel">Update</span>
-                  <input
-                    type="text"
-                    name="name"
-                    placeholder="Name"
-                    value={selectedChef?.name || ""}
-                    onChange={(e) =>
-                      setSelectedChef({
-                        ...selectedChef,
-                        name: e.target.value,
-                      })
-                    }
-                  />
-                  <input
-                    type="text"
-                    name="image"
-                    placeholder="Image"
-                    value={selectedChef?.image || ""}
-                    onChange={(e) =>
-                      setSelectedChef({
-                        ...selectedChef,
-                        image: e.target.value,
-                      })
-                    }
-                  />
-                  <button onClick={() => handleUpdateClick(true, false)}>
-                    Update
-                  </button>
-                </div>
-              </>
-            )}
-
-            {activeTab === 2 && (
-              <>
-                <div className="actionContainer">
-                  <span className="actionTitel">NEW</span>
-                  <input type="text" name="category" placeholder="category" />
-                  <input
-                    type="text"
-                    name="description"
-                    placeholder="description"
-                  />
-                  <input type="text" name="price" placeholder="price" />
-                  <input type="text" name="image" placeholder="Image" />
-                  <input type="text" name="name" placeholder="Name" />
-                  <input type="text" name="chefId" placeholder="Chef ID" />
-                  <input type="number" name="rate" placeholder="Rate" />
-                  <button onClick={() => handleNewClick()}>New</button>
-                </div>
-                <div className="actionContainer">
-                  <span className="actionTitel">Update</span>
-                  <input
-                    type="text"
-                    name="category"
-                    placeholder="category"
-                    value={selectedDish?.category || ""}
-                    onChange={(e) =>
-                      setSelectedDish({
-                        ...selectedDish,
-                        category: e.target.value,
-                      })
-                    }
-                  />
-                  <input
-                    type="text"
-                    name="description"
-                    placeholder="description"
-                    value={selectedDish?.description || ""}
-                    onChange={(e) =>
-                      setSelectedDish({
-                        ...selectedDish,
-                        description: e.target.value,
-                      })
-                    }
-                  />
-                  <input
-                    type="text"
-                    name="price"
-                    placeholder="price"
-                    value={selectedDish?.price || ""}
-                    onChange={(e) =>
-                      setSelectedDish({
-                        ...selectedDish,
-                        price: parseFloat(e.target.value),
-                      })
-                    }
-                  />
-                  <input
-                    type="text"
-                    name="image"
-                    placeholder="Image"
-                    value={selectedDish?.image || ""}
-                    onChange={(e) =>
-                      setSelectedDish({
-                        ...selectedDish,
-                        description: e.target.value,
-                      })
-                    }
-                  />
-                  <input
-                    type="text"
-                    name="name"
-                    placeholder="Name"
-                    value={selectedDish?.name || ""}
-                    onChange={(e) =>
-                      setSelectedDish({
-                        ...selectedDish,
-                        name: e.target.value,
-                      })
-                    }
-                  />
-                  <input type="text" name="chefId" placeholder="Chef ID" />
-                  <input type="number" name="rate" placeholder="Rate" />
-                  <button onClick={() => handleUpdateClick(false, true)}>
-                    Update
-                  </button>
-                </div>
-              </>
-            )}
+        <div className="signOut">
+            <SignOutButton></SignOutButton>
           </div>
+        <div className="actionsContainer">
+          {role === "superAdmin" && (
+            <>
+              <div className="boxesContainer">
+                {activeTab === 0 && (
+                  <>
+                    <div className="actionContainer">
+                      <span className="actionTitel">NEW</span>
+                      <div className="newRestaurant">
+                        <div className="textFieldsRestaurant">
+                          <input
+                            type="text"
+                            name="image"
+                            placeholder="Image"
+                            value={newRestaurant.image}
+                            onChange={(e) => handleInputChange(e, "restaurant")}
+                          />
+                          <input
+                            type="text"
+                            name="name"
+                            placeholder="Name"
+                            value={newRestaurant.name}
+                            onChange={(e) => handleInputChange(e, "restaurant")}
+                          />
+                          <select
+                            name="chefId"
+                            value={newRestaurant.chefId.id}
+                            onChange={(e) =>
+                              setNewRestaurant((prevRestaurant) => ({
+                                ...prevRestaurant,
+                                chefId: {
+                                  ...prevRestaurant.chefId,
+                                  id: e.target.value,
+                                },
+                              }))
+                            }
+                          >
+                            {newRestaurant.chefId.id ? null : (
+                              <option value="">Select a Chef</option>
+                            )}
 
-          <button className="deleteButton" onClick={() => handleDeleteClick()}>
-            Delete
-          </button>
+                            {allChefs.map((chef) => (
+                              <option key={chef.id} value={chef.id}>
+                                {chef.name}
+                              </option>
+                            ))}
+                          </select>
+
+                          <select
+                            name="rate"
+                            value={newRestaurant.rate}
+                            onChange={(e) =>
+                              setNewRestaurant((prevRestaurant) => ({
+                                ...prevRestaurant,
+                                rate: parseInt(e.target.value),
+                              }))
+                            }
+                          >
+                            {newRestaurant.rate ? null : (
+                              <option value="">Select a Rate</option>
+                            )}
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                          </select>
+                        </div>
+                        <div className="dishesChoosen">
+                          <span>Dishes:</span>
+                          <select
+                            className="custom-select"
+                            name="dishId"
+                            value={newRestaurant.dishes}
+                            onChange={(e) => {
+                              const selectedDishId = e.target.value;
+                              if (
+                                newRestaurant.dishes.includes(selectedDishId)
+                              ) {
+                                setNewRestaurant((prevRestaurant) => ({
+                                  ...prevRestaurant,
+                                  dishes: prevRestaurant.dishes.filter(
+                                    (id) => id !== selectedDishId
+                                  ),
+                                }));
+                              } else {
+                                setNewRestaurant((prevRestaurant) => ({
+                                  ...prevRestaurant,
+                                  dishes: [
+                                    ...prevRestaurant.dishes,
+                                    selectedDishId,
+                                  ],
+                                }));
+                              }
+                            }}
+                            multiple
+                          >
+                            {allDishes.map((dish) => (
+                              <option key={dish.id} value={dish.id}>
+                                {dish.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+
+                      <button onClick={() => handleNewClick()}>New</button>
+                    </div>
+
+                    <div className="actionContainer">
+                      <span className="actionTitel">Update</span>
+                      <div className="newRestaurant">
+                        <div className="textFieldsRestaurant">
+                          <input
+                            type="text"
+                            name="image"
+                            placeholder="Image"
+                            value={selectedRestaurant?.image || ""}
+                            onChange={(e) =>
+                              setSelectedRestaurant({
+                                ...selectedRestaurant,
+                                image: e.target.value,
+                              })
+                            }
+                          />
+                          <input
+                            type="text"
+                            name="name"
+                            placeholder="Name"
+                            value={selectedRestaurant?.name || ""}
+                            onChange={(e) =>
+                              setSelectedRestaurant({
+                                ...selectedRestaurant,
+                                name: e.target.value,
+                              })
+                            }
+                          />
+                          <select
+                            name="chefId"
+                            value={selectedRestaurant.chefId.id}
+                            onChange={(e) =>
+                              setSelectedRestaurant((prevRestaurant) => ({
+                                ...prevRestaurant,
+                                chefId: {
+                                  ...prevRestaurant.chefId,
+                                  id: e.target.value,
+                                  name:
+                                    allChefs.find(
+                                      (chef) => chef.id === e.target.value
+                                    )?.name || "",
+                                },
+                              }))
+                            }
+                          >
+                            <option value="">Select a Chef</option>
+                            {allChefs.map((chef) => (
+                              <option key={chef.id} value={chef.id}>
+                                {chef.name}
+                              </option>
+                            ))}
+                          </select>
+
+                          <select
+                            name="rate"
+                            value={selectedRestaurant.rate.toString()}
+                            onChange={(e) =>
+                              setSelectedRestaurant((prevRestaurant) => ({
+                                ...prevRestaurant,
+                                rate: parseInt(e.target.value),
+                              }))
+                            }
+                          >
+                            {selectedRestaurant.rate ? null : (
+                              <option value="">Select a Rate</option>
+                            )}
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                          </select>
+                        </div>
+                        <div className="dishesChoosen">
+                          <span>All dishes:</span>
+                          <select
+                            className="custom-select"
+                            name="dishes"
+                            value={selectedRestaurant.dishes}
+                            onChange={(e) => {
+                              const selectedDishId = e.target.value;
+                              setSelectedRestaurant((prevRestaurant) => {
+                                const updatedDishes = [
+                                  ...prevRestaurant.dishes,
+                                ];
+                                if (updatedDishes.includes(selectedDishId)) {
+                                  updatedDishes.splice(
+                                    updatedDishes.indexOf(selectedDishId),
+                                    1
+                                  );
+                                } else {
+                                  updatedDishes.push(selectedDishId);
+                                }
+
+                                return {
+                                  ...prevRestaurant,
+                                  dishes: updatedDishes,
+                                };
+                              });
+                            }}
+                            multiple
+                          >
+                            {allDishes.map((dish) => (
+                              <option key={dish.id} value={dish.id}>
+                                {dish.name}
+                              </option>
+                            ))}
+                          </select>
+                          <span>Dishes of the restaurant:</span>
+                          <select
+                            className="custom-select"
+                            id="dishesSelect"
+                            multiple
+                          >
+                            {allDishes2.map((dish) => (
+                              <option key={dish.id} value={dish.id}>
+                                {dish.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                      <button onClick={() => handleUpdateClick(false, false)}>
+                        Update
+                      </button>
+                    </div>
+                  </>
+                )}
+
+                {activeTab === 1 && (
+                  <>
+                    <div className="actionContainer">
+                      <span className="actionTitel">NEW</span>
+                      <input
+                        type="text"
+                        name="name"
+                        placeholder="Name"
+                        value={newChef.name}
+                        onChange={(e) => handleInputChange(e, "chef")}
+                      />
+                      <input
+                        type="text"
+                        name="image"
+                        placeholder="Image"
+                        value={newChef.image}
+                        onChange={(e) => handleInputChange(e, "chef")}
+                      />
+                      <button onClick={() => handleNewClick()}>New</button>
+                    </div>
+                    <div className="actionContainer">
+                      <span className="actionTitel">Update</span>
+                      <input
+                        type="text"
+                        name="name"
+                        placeholder="Name"
+                        value={selectedChef?.name || ""}
+                        onChange={(e) =>
+                          setSelectedChef({
+                            ...selectedChef,
+                            name: e.target.value,
+                          })
+                        }
+                      />
+                      <input
+                        type="text"
+                        name="image"
+                        placeholder="Image"
+                        value={selectedChef?.image || ""}
+                        onChange={(e) =>
+                          setSelectedChef({
+                            ...selectedChef,
+                            image: e.target.value,
+                          })
+                        }
+                      />
+                      <button onClick={() => handleUpdateClick(true, false)}>
+                        Update
+                      </button>
+                    </div>
+                  </>
+                )}
+
+                {activeTab === 2 && (
+                  <>
+                    <div className="actionContainer">
+                      <span className="actionTitel">NEW</span>
+                      <input
+                        type="text"
+                        name="name"
+                        placeholder="Name"
+                        value={newDish.name}
+                        onChange={(e) => handleInputChange(e, "dish")}
+                      />
+                      <input
+                        type="text"
+                        name="image"
+                        placeholder="Image"
+                        value={newDish.image}
+                        onChange={(e) => handleInputChange(e, "dish")}
+                      />
+                      <select
+                        name="category"
+                        key="category"
+                        placeholder="Image"
+                        value={newDish.category}
+                        onChange={(e) => handleInputChange(e, "dish")}
+                      >
+                        <option value="" disabled hidden>
+                          {newDish.category ? "" : "Select a category"}
+                        </option>{" "}
+                        <option value="Breakfast">Breakfast</option>
+                        <option value="Lunch">Lunch</option>
+                        <option value="Dinner">Dinner</option>
+                      </select>
+                      <input
+                        type="text"
+                        name="description"
+                        placeholder="Description"
+                        value={newDish.description}
+                        onChange={(e) => handleInputChange(e, "dish")}
+                      />
+                      <input
+                        type="text"
+                        name="price"
+                        placeholder="Price"
+                        value={newDish.price || ""}
+                        onChange={(e) => handleInputChange(e, "dish")}
+                      />
+                      <select
+                        value={newDish.icons}
+                        onChange={(e) => {
+                          const selectedIcon = e.target.value;
+                          const updatedIcons = newDish.icons.includes(
+                            selectedIcon
+                          )
+                            ? newDish.icons.filter(
+                                (icon) => icon !== selectedIcon
+                              )
+                            : [...newDish.icons, selectedIcon];
+
+                          setNewDish((prevDish) => ({
+                            ...prevDish,
+                            icons: updatedIcons,
+                          }));
+                        }}
+                        multiple
+                      >
+                        <option value="spicy">Spicy</option>
+                        <option value="vegan">Vegan</option>
+                        <option value="vegetarian">Vegetarian</option>
+                      </select>
+                      <button onClick={() => handleNewClick()}>New</button>
+                    </div>
+
+                    <div className="actionContainer">
+                      <span className="actionTitel">Update</span>
+                      <input
+                        type="text"
+                        name="name"
+                        placeholder="Name"
+                        value={selectedDish?.name || ""}
+                        onChange={(e) =>
+                          setSelectedDish({
+                            ...selectedDish,
+                            name: e.target.value,
+                          })
+                        }
+                      />
+                      <input
+                        type="text"
+                        name="image"
+                        placeholder="Image"
+                        value={selectedDish?.image || ""}
+                        onChange={(e) =>
+                          setSelectedDish({
+                            ...selectedDish,
+                            description: e.target.value,
+                          })
+                        }
+                      />
+                      <select
+                        name="category"
+                        placeholder="Image"
+                        value={selectedDish.category}
+                        onChange={(e) => handleInputChange(e, "dish")}
+                      >
+                        <option value="" disabled hidden>
+                          {newDish.category ? "" : "Select a category"}
+                        </option>{" "}
+                        <option value="Breakfast">Breakfast</option>
+                        <option value="Lunch">Lunch</option>
+                        <option value="Dinner">Dinner</option>
+                      </select>
+                      <input
+                        type="text"
+                        name="description"
+                        placeholder="description"
+                        value={selectedDish?.description || ""}
+                        onChange={(e) =>
+                          setSelectedDish({
+                            ...selectedDish,
+                            description: e.target.value,
+                          })
+                        }
+                      />
+                      <input
+                        type="text"
+                        name="price"
+                        placeholder="price"
+                        value={selectedDish?.price || ""}
+                        onChange={(e) =>
+                          setSelectedDish({
+                            ...selectedDish,
+                            price: parseFloat(e.target.value),
+                          })
+                        }
+                      />
+                      <select
+                        value={selectedDish.icons}
+                        onChange={(e) => {
+                          const selectedIcon = e.target.value;
+                          const updatedIcons = selectedDish.icons.includes(
+                            selectedIcon
+                          )
+                            ? selectedDish.icons.filter(
+                                (icon) => icon !== selectedIcon
+                              )
+                            : [...selectedDish.icons, selectedIcon];
+
+                          setSelectedDish((prevDish) => ({
+                            ...prevDish,
+                            icons: updatedIcons,
+                          }));
+                        }}
+                        multiple
+                      >
+                        {icons.map((icon) => (
+                          <option
+                            key={icon}
+                            value={icon}
+                            selected={selectedDish.icons.includes(icon)}
+                          >
+                            {icon.charAt(0).toUpperCase() + icon.slice(1)}
+                          </option>
+                        ))}
+                      </select>
+
+                      <button onClick={() => handleUpdateClick(false, true)}>
+                        Update
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+              <button
+                className="deleteButton"
+                onClick={() => handleDeleteClick()}
+              >
+                Delete
+              </button>
+            </>
+          )}
+
         </div>
       </div>
     </>
