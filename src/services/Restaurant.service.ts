@@ -55,13 +55,13 @@ export const deleteRestaurant = async (id: string, token: string) => {
     });
 
     if (response.status === 200) {
-      return true; // Deleted successfully
+      return true; 
     } else {
-      return false; // Failed to delete
+      return false; 
     }
   } catch (error) {
     console.error("Error deleting restaurant:", error);
-    return false; // Failed to delete due to an error
+    return false;
   }
 };
 

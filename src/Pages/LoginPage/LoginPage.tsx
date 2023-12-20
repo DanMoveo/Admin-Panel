@@ -7,8 +7,7 @@ const handleLogin = async (email: string, password: string) => {
   if (!email || !password) {
     alert("Please fill in both email and password to login.");
     return;
-  }
-  else {
+  } else {
     try {
       if (!email || !password) return;
       const response = await fetch("http://localhost:5000/admins/login", {

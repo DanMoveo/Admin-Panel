@@ -33,7 +33,6 @@ import { RoutePaths } from "../../shared/constants";
 
 const API_BASE_URL = "http://localhost:5000";
 function HomePage() {
-  // State variables
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [chefs, setChefs] = useState<Chef[]>([]);
   const [dishes, setDishes] = useState<Dish[]>([]);
@@ -66,7 +65,6 @@ function HomePage() {
       navigate(RoutePaths.Login);
       return;
     }
-    console.log(token);
     const decoded = jwtDecode(token) as DecodedToken;
     setRole(decoded.roles[0]);
     async function fetchChefs() {
@@ -116,14 +114,10 @@ function HomePage() {
     if ("chefId" in item) {
       // It's a restaurant
       setSelectedRestaurant(item);
-      console.log("select restaurant" + item.dishes);
-
       const response2 = await axios.get<Restaurant>(
         `${API_BASE_URL}/restaurants/restaurant/${item.id}`
       );
-      const dishesArray = response2.data.dishes;
-      const res = JSON.stringify(dishesArray);
-      const parsedRes = JSON.parse(res);
+      const parsedRes = JSON.parse(JSON.stringify(response2.data.dishes));
       setAllDishes2(parsedRes);
     } else if ("icons" in item) {
       // It's a dish
@@ -492,8 +486,8 @@ function HomePage() {
           )}
         </div>
         <div className="signOut">
-            <SignOutButton></SignOutButton>
-          </div>
+          <SignOutButton></SignOutButton>
+        </div>
         <div className="actionsContainer">
           {role === "superAdmin" && (
             <>
@@ -501,7 +495,7 @@ function HomePage() {
                 {activeTab === 0 && (
                   <>
                     <div className="actionContainer">
-                      <span className="actionTitel">NEW</span>
+                      <span className="actionTitel">Add new restaurant</span>
                       <div className="newRestaurant">
                         <div className="textFieldsRestaurant">
                           <input
@@ -684,24 +678,26 @@ function HomePage() {
                             value={selectedRestaurant.dishes}
                             onChange={(e) => {
                               const selectedDishId = e.target.value;
-                              setSelectedRestaurant((prevRestaurant) => {
-                                const updatedDishes = [
-                                  ...prevRestaurant.dishes,
-                                ];
-                                if (updatedDishes.includes(selectedDishId)) {
-                                  updatedDishes.splice(
-                                    updatedDishes.indexOf(selectedDishId),
-                                    1
-                                  );
-                                } else {
-                                  updatedDishes.push(selectedDishId);
-                                }
-
-                                return {
+                              if (
+                                selectedRestaurant.dishes.includes(
+                                  selectedDishId
+                                )
+                              ) {
+                                setSelectedRestaurant((prevRestaurant) => ({
                                   ...prevRestaurant,
-                                  dishes: updatedDishes,
-                                };
-                              });
+                                  dishes: prevRestaurant.dishes.filter(
+                                    (id) => id !== selectedDishId
+                                  ),
+                                }));
+                              } else {
+                                setSelectedRestaurant((prevRestaurant) => ({
+                                  ...prevRestaurant,
+                                  dishes: [
+                                    ...prevRestaurant.dishes,
+                                    selectedDishId,
+                                  ],
+                                }));
+                              }
                             }}
                             multiple
                           >
@@ -711,18 +707,22 @@ function HomePage() {
                               </option>
                             ))}
                           </select>
-                          <span>Dishes of the restaurant:</span>
-                          <select
-                            className="custom-select"
-                            id="dishesSelect"
-                            multiple
-                          >
-                            {allDishes2.map((dish) => (
-                              <option key={dish.id} value={dish.id}>
-                                {dish.name}
-                              </option>
-                            ))}
-                          </select>
+                          {clickedDivId && (
+                            <span>Dishes of the restaurant:</span>
+                          )}
+                          {clickedDivId && (
+                            <select
+                              className="custom-select"
+                              id="dishesSelect"
+                              multiple
+                            >
+                              {allDishes2.map((dish) => (
+                                <option key={dish.id} value={dish.id}>
+                                  {dish.name}
+                                </option>
+                              ))}
+                            </select>
+                          )}
                         </div>
                       </div>
                       <button onClick={() => handleUpdateClick(false, false)}>
@@ -735,49 +735,58 @@ function HomePage() {
                 {activeTab === 1 && (
                   <>
                     <div className="actionContainer">
-                      <span className="actionTitel">NEW</span>
-                      <input
-                        type="text"
-                        name="name"
-                        placeholder="Name"
-                        value={newChef.name}
-                        onChange={(e) => handleInputChange(e, "chef")}
-                      />
-                      <input
-                        type="text"
-                        name="image"
-                        placeholder="Image"
-                        value={newChef.image}
-                        onChange={(e) => handleInputChange(e, "chef")}
-                      />
+                      <div className="newRestaurant">
+                        <div className="textFieldsRestaurant">
+                          <span className="actionTitel">Add new chef</span>
+                          <input
+                            type="text"
+                            name="name"
+                            placeholder="Name"
+                            value={newChef.name}
+                            onChange={(e) => handleInputChange(e, "chef")}
+                          />
+                          <input
+                            type="text"
+                            name="image"
+                            placeholder="Image"
+                            value={newChef.image}
+                            onChange={(e) => handleInputChange(e, "chef")}
+                          />
+                        </div>
+                      </div>
                       <button onClick={() => handleNewClick()}>New</button>
                     </div>
+
                     <div className="actionContainer">
                       <span className="actionTitel">Update</span>
-                      <input
-                        type="text"
-                        name="name"
-                        placeholder="Name"
-                        value={selectedChef?.name || ""}
-                        onChange={(e) =>
-                          setSelectedChef({
-                            ...selectedChef,
-                            name: e.target.value,
-                          })
-                        }
-                      />
-                      <input
-                        type="text"
-                        name="image"
-                        placeholder="Image"
-                        value={selectedChef?.image || ""}
-                        onChange={(e) =>
-                          setSelectedChef({
-                            ...selectedChef,
-                            image: e.target.value,
-                          })
-                        }
-                      />
+                      <div className="newRestaurant">
+                        <div className="textFieldsRestaurant">
+                          <input
+                            type="text"
+                            name="name"
+                            placeholder="Name"
+                            value={selectedChef?.name || ""}
+                            onChange={(e) =>
+                              setSelectedChef({
+                                ...selectedChef,
+                                name: e.target.value,
+                              })
+                            }
+                          />
+                          <input
+                            type="text"
+                            name="image"
+                            placeholder="Image"
+                            value={selectedChef?.image || ""}
+                            onChange={(e) =>
+                              setSelectedChef({
+                                ...selectedChef,
+                                image: e.target.value,
+                              })
+                            }
+                          />
+                        </div>
+                      </div>
                       <button onClick={() => handleUpdateClick(true, false)}>
                         Update
                       </button>
@@ -788,168 +797,175 @@ function HomePage() {
                 {activeTab === 2 && (
                   <>
                     <div className="actionContainer">
-                      <span className="actionTitel">NEW</span>
-                      <input
-                        type="text"
-                        name="name"
-                        placeholder="Name"
-                        value={newDish.name}
-                        onChange={(e) => handleInputChange(e, "dish")}
-                      />
-                      <input
-                        type="text"
-                        name="image"
-                        placeholder="Image"
-                        value={newDish.image}
-                        onChange={(e) => handleInputChange(e, "dish")}
-                      />
-                      <select
-                        name="category"
-                        key="category"
-                        placeholder="Image"
-                        value={newDish.category}
-                        onChange={(e) => handleInputChange(e, "dish")}
-                      >
-                        <option value="" disabled hidden>
-                          {newDish.category ? "" : "Select a category"}
-                        </option>{" "}
-                        <option value="Breakfast">Breakfast</option>
-                        <option value="Lunch">Lunch</option>
-                        <option value="Dinner">Dinner</option>
-                      </select>
-                      <input
-                        type="text"
-                        name="description"
-                        placeholder="Description"
-                        value={newDish.description}
-                        onChange={(e) => handleInputChange(e, "dish")}
-                      />
-                      <input
-                        type="text"
-                        name="price"
-                        placeholder="Price"
-                        value={newDish.price || ""}
-                        onChange={(e) => handleInputChange(e, "dish")}
-                      />
-                      <select
-                        value={newDish.icons}
-                        onChange={(e) => {
-                          const selectedIcon = e.target.value;
-                          const updatedIcons = newDish.icons.includes(
-                            selectedIcon
-                          )
-                            ? newDish.icons.filter(
-                                (icon) => icon !== selectedIcon
+                      <span className="actionTitel">Add new dish</span>
+                      <div className="newRestaurant">
+                        <div className="textFieldsRestaurant">
+                          <input
+                            type="text"
+                            name="name"
+                            placeholder="Name"
+                            value={newDish.name}
+                            onChange={(e) => handleInputChange(e, "dish")}
+                          />
+                          <input
+                            type="text"
+                            name="image"
+                            placeholder="Image"
+                            value={newDish.image}
+                            onChange={(e) => handleInputChange(e, "dish")}
+                          />
+                          <select
+                            name="category"
+                            key="category"
+                            placeholder="Image"
+                            value={newDish.category}
+                            onChange={(e) => handleInputChange(e, "dish")}
+                          >
+                            <option value="" disabled hidden>
+                              {newDish.category ? "" : "Select a category"}
+                            </option>{" "}
+                            <option value="Breakfast">Breakfast</option>
+                            <option value="Lunch">Lunch</option>
+                            <option value="Dinner">Dinner</option>
+                          </select>
+                          <input
+                            type="text"
+                            name="description"
+                            placeholder="Description"
+                            value={newDish.description}
+                            onChange={(e) => handleInputChange(e, "dish")}
+                          />
+                          <input
+                            type="text"
+                            name="price"
+                            placeholder="Price"
+                            value={newDish.price || ""}
+                            onChange={(e) => handleInputChange(e, "dish")}
+                          />
+                          <select
+                            value={newDish.icons}
+                            onChange={(e) => {
+                              const selectedIcon = e.target.value;
+                              const updatedIcons = newDish.icons.includes(
+                                selectedIcon
                               )
-                            : [...newDish.icons, selectedIcon];
+                                ? newDish.icons.filter(
+                                    (icon) => icon !== selectedIcon
+                                  )
+                                : [...newDish.icons, selectedIcon];
 
-                          setNewDish((prevDish) => ({
-                            ...prevDish,
-                            icons: updatedIcons,
-                          }));
-                        }}
-                        multiple
-                      >
-                        <option value="spicy">Spicy</option>
-                        <option value="vegan">Vegan</option>
-                        <option value="vegetarian">Vegetarian</option>
-                      </select>
+                              setNewDish((prevDish) => ({
+                                ...prevDish,
+                                icons: updatedIcons,
+                              }));
+                            }}
+                            multiple
+                          >
+                            <option value="spicy">Spicy</option>
+                            <option value="vegan">Vegan</option>
+                            <option value="vegetarian">Vegetarian</option>
+                          </select>
+                        </div>
+                      </div>
+
                       <button onClick={() => handleNewClick()}>New</button>
                     </div>
-
                     <div className="actionContainer">
                       <span className="actionTitel">Update</span>
-                      <input
-                        type="text"
-                        name="name"
-                        placeholder="Name"
-                        value={selectedDish?.name || ""}
-                        onChange={(e) =>
-                          setSelectedDish({
-                            ...selectedDish,
-                            name: e.target.value,
-                          })
-                        }
-                      />
-                      <input
-                        type="text"
-                        name="image"
-                        placeholder="Image"
-                        value={selectedDish?.image || ""}
-                        onChange={(e) =>
-                          setSelectedDish({
-                            ...selectedDish,
-                            description: e.target.value,
-                          })
-                        }
-                      />
-                      <select
-                        name="category"
-                        placeholder="Image"
-                        value={selectedDish.category}
-                        onChange={(e) => handleInputChange(e, "dish")}
-                      >
-                        <option value="" disabled hidden>
-                          {newDish.category ? "" : "Select a category"}
-                        </option>{" "}
-                        <option value="Breakfast">Breakfast</option>
-                        <option value="Lunch">Lunch</option>
-                        <option value="Dinner">Dinner</option>
-                      </select>
-                      <input
-                        type="text"
-                        name="description"
-                        placeholder="description"
-                        value={selectedDish?.description || ""}
-                        onChange={(e) =>
-                          setSelectedDish({
-                            ...selectedDish,
-                            description: e.target.value,
-                          })
-                        }
-                      />
-                      <input
-                        type="text"
-                        name="price"
-                        placeholder="price"
-                        value={selectedDish?.price || ""}
-                        onChange={(e) =>
-                          setSelectedDish({
-                            ...selectedDish,
-                            price: parseFloat(e.target.value),
-                          })
-                        }
-                      />
-                      <select
-                        value={selectedDish.icons}
-                        onChange={(e) => {
-                          const selectedIcon = e.target.value;
-                          const updatedIcons = selectedDish.icons.includes(
-                            selectedIcon
-                          )
-                            ? selectedDish.icons.filter(
-                                (icon) => icon !== selectedIcon
-                              )
-                            : [...selectedDish.icons, selectedIcon];
-
-                          setSelectedDish((prevDish) => ({
-                            ...prevDish,
-                            icons: updatedIcons,
-                          }));
-                        }}
-                        multiple
-                      >
-                        {icons.map((icon) => (
-                          <option
-                            key={icon}
-                            value={icon}
-                            selected={selectedDish.icons.includes(icon)}
+                      <div className="newRestaurant">
+                        <div className="textFieldsRestaurant">
+                          <input
+                            type="text"
+                            name="name"
+                            placeholder="Name"
+                            value={selectedDish?.name || ""}
+                            onChange={(e) =>
+                              setSelectedDish({
+                                ...selectedDish,
+                                name: e.target.value,
+                              })
+                            }
+                          />
+                          <input
+                            type="text"
+                            name="image"
+                            placeholder="Image"
+                            value={selectedDish?.image || ""}
+                            onChange={(e) =>
+                              setSelectedDish({
+                                ...selectedDish,
+                                description: e.target.value,
+                              })
+                            }
+                          />
+                          <select
+                            name="category"
+                            placeholder="Image"
+                            value={selectedDish.category}
+                            onChange={(e) => handleInputChange(e, "dish")}
                           >
-                            {icon.charAt(0).toUpperCase() + icon.slice(1)}
-                          </option>
-                        ))}
-                      </select>
+                            <option value="" disabled hidden>
+                              {newDish.category ? "" : "Select a category"}
+                            </option>{" "}
+                            <option value="Breakfast">Breakfast</option>
+                            <option value="Lunch">Lunch</option>
+                            <option value="Dinner">Dinner</option>
+                          </select>
+                          <input
+                            type="text"
+                            name="description"
+                            placeholder="description"
+                            value={selectedDish?.description || ""}
+                            onChange={(e) =>
+                              setSelectedDish({
+                                ...selectedDish,
+                                description: e.target.value,
+                              })
+                            }
+                          />
+                          <input
+                            type="text"
+                            name="price"
+                            placeholder="price"
+                            value={selectedDish?.price || ""}
+                            onChange={(e) =>
+                              setSelectedDish({
+                                ...selectedDish,
+                                price: parseFloat(e.target.value),
+                              })
+                            }
+                          />
+                          <select
+                            value={selectedDish.icons}
+                            onChange={(e) => {
+                              const selectedIcon = e.target.value;
+                              const updatedIcons = selectedDish.icons.includes(
+                                selectedIcon
+                              )
+                                ? selectedDish.icons.filter(
+                                    (icon) => icon !== selectedIcon
+                                  )
+                                : [...selectedDish.icons, selectedIcon];
 
+                              setSelectedDish((prevDish) => ({
+                                ...prevDish,
+                                icons: updatedIcons,
+                              }));
+                            }}
+                            multiple
+                          >
+                            {icons.map((icon) => (
+                              <option
+                                key={icon}
+                                value={icon}
+                                selected={selectedDish.icons.includes(icon)}
+                              >
+                                {icon.charAt(0).toUpperCase() + icon.slice(1)}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
                       <button onClick={() => handleUpdateClick(false, true)}>
                         Update
                       </button>
@@ -957,15 +973,16 @@ function HomePage() {
                   </>
                 )}
               </div>
-              <button
-                className="deleteButton"
-                onClick={() => handleDeleteClick()}
-              >
-                Delete
-              </button>
+              <div className="buttonContainer">
+                <button
+                  className="deleteButton"
+                  onClick={() => handleDeleteClick()}
+                >
+                  Delete
+                </button>
+              </div>
             </>
           )}
-
         </div>
       </div>
     </>
