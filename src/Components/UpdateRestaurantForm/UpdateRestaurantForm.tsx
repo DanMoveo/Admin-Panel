@@ -127,8 +127,8 @@ const UpdateRestaurantForm: React.FC<UpdateRestaurantFormProps> = ({
             {clickedDivId && <span>Dishes of the restaurant:</span>}
             {clickedDivId && (
               <select className="custom-select" id="dishesSelect" multiple>
-                {allDishes2.map((dish) => (
-                  <option key={dish.id} value={dish.id}>
+                {allDishes2.map((dish, index) => (
+                  <option key={index} value={dish.id}>
                     {dish.name}
                   </option>
                 ))}

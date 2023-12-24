@@ -51,12 +51,12 @@ export const deleteDish = async (id: string, token: string) => {
     });
 
     if (response.status === 200) {
-      return true; 
+      return true;
     } else {
-      return false; 
+      return false;
     }
   } catch (error) {
     console.error("Error deleting dish:", error);
-    return false; 
+    return false;
   }
 };

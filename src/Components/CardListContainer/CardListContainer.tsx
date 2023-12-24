@@ -3,7 +3,7 @@
 import React from "react";
 import { Restaurant, Chef, Dish } from "../../models/Restaurant.interfaces";
 import Card from "../Card/Card";
-import "./CardList.scss";
+import "./CardListContainer.scss";
 
 interface CardListContainerProps {
   activeTab: number;

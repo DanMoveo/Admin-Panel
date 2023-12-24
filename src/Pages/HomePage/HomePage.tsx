@@ -3,7 +3,6 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Tabs from "../../Components/Tabs/Tabs";
 import axios from "axios";
-import Card from "../../Components/Card/Card";
 import {
   Restaurant,
   Chef,
@@ -32,7 +31,6 @@ import {
 import SignOutButton from "../../Components/SignOutButton/SignOutButton";
 import { RoutePaths } from "../../shared/constants";
 import { validateFields } from "../../services/validationHelper";
-import CardListContainer from "../../Components/CardList/CardList";
 import NewRestaurantForm from "../../Components/NewRestaurantForm/NewRestaurantForm";
 import NewChefForm from "../../Components/NewChefForm/NewChefForm";
 import NewDishForm from "../../Components/NewDishForm/NewDishForm";
@@ -40,6 +38,7 @@ import DeleteButton from "../../Components/DeleteButton/DeleteButton";
 import UpdateRestaurantForm from "../../Components/UpdateRestaurantForm/UpdateRestaurantForm";
 import UpdateChefForm from "../../Components/UpdateChefForm/UpdateChefForm";
 import UpdateDishForm from "../../Components/UpdateDishForm/UpdateDishForm";
+import CardListContainer from "../../Components/CardListContainer/CardListContainer";
 
 const API_BASE_URL = "http://localhost:5000";
 function HomePage() {
