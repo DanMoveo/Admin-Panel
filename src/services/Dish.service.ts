@@ -43,9 +43,20 @@ export const createDish = async (data: any) => {
 
 export const deleteDish = async (id: string, token: string) => {
   try {
-    // Implement logic to send a DELETE request to delete a dish
+    const response = await axios.delete(`${API_BASE_URL}/admins/dishes/${id}`, {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (response.status === 200) {
+      return true; 
+    } else {
+      return false; 
+    }
   } catch (error) {
     console.error("Error deleting dish:", error);
-    return false; // Failed to delete due to an error
+    return false; 
   }
 };

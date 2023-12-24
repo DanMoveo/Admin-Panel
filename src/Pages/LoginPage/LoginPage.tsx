@@ -10,7 +10,7 @@ const handleLogin = async (email: string, password: string) => {
   } else {
     try {
       if (!email || !password) return;
-      const response = await fetch("http://localhost:5000/admins/login", {
+      const response = await fetch("http://localhost:5000/auth/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

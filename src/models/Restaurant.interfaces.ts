@@ -19,8 +19,8 @@ export type Dish = {
   image: string;
   category: string;
   description: string;
-  icons: string[];
   price: number;
+  icons: string[];
 };
 
 export type DecodedToken = {
