@@ -107,9 +107,7 @@ function HomePage() {
           //   dishes: restaurant.dishes.map(dish => dish._id), 
           // }));
 
-          // console.log(transformedData)
-        
-          
+          // console.log(transformedData)     
 
           break;
         case 1: // Chefs
