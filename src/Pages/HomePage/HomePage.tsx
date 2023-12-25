@@ -97,6 +97,20 @@ function HomePage() {
         case 0: // Restaurants
           data = await fetchRestaurants();
           setRestaurants(data);
+          // const res: Restaurant2[] = data;
+
+          // const transformedData: any[] = res.map(restaurant => ({
+          //   image: restaurant.image,
+          //   name: restaurant.name,
+          //   chefId: restaurant.chefId.id, 
+          //   rate: restaurant.rate,
+          //   dishes: restaurant.dishes.map(dish => dish._id), 
+          // }));
+
+          // console.log(transformedData)
+        
+          
+
           break;
         case 1: // Chefs
           data = await fetchChefs();
@@ -145,11 +159,13 @@ function HomePage() {
   const isCardClicked = (
     id: string,
     isChef: boolean,
-    isDish: boolean
+    isDish: boolean,
+    isRestaurant: boolean
   ): boolean => {
     switch (true) {
       case isChef:
       case isDish:
+      case isRestaurant:
         return id === clickedDivId;
       default:
         return false;
@@ -486,15 +502,17 @@ function HomePage() {
                       handleNewClick={handleNewClick}
                       setNewRestaurant={setNewRestaurant}
                     />
-                    <UpdateRestaurantForm
-                      selectedRestaurant={selectedRestaurant}
-                      allChefs={allChefs}
-                      allDishes={allDishes}
-                      allDishes2={allDishes2}
-                      handleUpdateClick={handleUpdateClick}
-                      setSelectedRestaurant={setSelectedRestaurant}
-                      clickedDivId={clickedDivId}
-                    />
+                    {selectedRestaurant.id && (
+                      <UpdateRestaurantForm
+                        selectedRestaurant={selectedRestaurant}
+                        allChefs={allChefs}
+                        allDishes={allDishes}
+                        allDishes2={allDishes2}
+                        handleUpdateClick={handleUpdateClick}
+                        setSelectedRestaurant={setSelectedRestaurant}
+                        clickedDivId={clickedDivId}
+                      />
+                    )}
                   </>
                 )}
                 {activeTab === 1 && (
@@ -504,11 +522,13 @@ function HomePage() {
                       handleInputChange={handleInputChange}
                       handleNewClick={handleNewClick}
                     />
-                    <UpdateChefForm
-                      selectedChef={selectedChef}
-                      handleUpdateClick={handleUpdateClick}
-                      setSelectedChef={setSelectedChef}
-                    />
+                    {selectedChef.id && (
+                      <UpdateChefForm
+                        selectedChef={selectedChef}
+                        handleUpdateClick={handleUpdateClick}
+                        setSelectedChef={setSelectedChef}
+                      />
+                    )}
                   </>
                 )}
                 {activeTab === 2 && (
@@ -519,14 +539,16 @@ function HomePage() {
                       handleNewClick={handleNewClick}
                       setNewDish={setNewDish}
                     />
-                    <UpdateDishForm
-                      selectedDish={selectedDish}
-                      icons={icons}
-                      handleUpdateClick={handleUpdateClick}
-                      setSelectedDish={setSelectedDish}
-                      handleInputChange={handleInputChange}
-                      newDish={newDish}
-                    />
+                    {selectedDish.id && (
+                      <UpdateDishForm
+                        selectedDish={selectedDish}
+                        icons={icons}
+                        handleUpdateClick={handleUpdateClick}
+                        setSelectedDish={setSelectedDish}
+                        handleInputChange={handleInputChange}
+                        newDish={newDish}
+                      />
+                    )}
                   </>
                 )}
               </div>

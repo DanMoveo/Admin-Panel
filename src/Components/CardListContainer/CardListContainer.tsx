@@ -10,7 +10,12 @@ interface CardListContainerProps {
   restaurants: Restaurant[];
   chefs: Chef[];
   dishes: Dish[];
-  isCardClicked: (id: string, isChef: boolean, isDish: boolean) => boolean;
+  isCardClicked: (
+    id: string,
+    isChef: boolean,
+    isDish: boolean,
+    isRestaurant: boolean
+  ) => boolean;
   handleCardClick: (item: Restaurant | Chef | Dish) => void;
 }
 
@@ -31,7 +36,7 @@ const CardListContainer: React.FC<CardListContainerProps> = ({
               key={restaurant.id}
               data={restaurant}
               isRestaurant
-              isClicked={isCardClicked(restaurant.id, false, false)}
+              isClicked={isCardClicked(restaurant.id, false, false, true)}
               onClick={() => handleCardClick(restaurant)}
             />
           ))}
@@ -44,7 +49,7 @@ const CardListContainer: React.FC<CardListContainerProps> = ({
               key={chef.id}
               data={chef}
               isChef
-              isClicked={isCardClicked(chef.id, true, false)}
+              isClicked={isCardClicked(chef.id, true, false, false)}
               onClick={() => handleCardClick(chef)}
             />
           ))}
@@ -57,7 +62,7 @@ const CardListContainer: React.FC<CardListContainerProps> = ({
               key={dish.id}
               data={dish}
               isDish
-              isClicked={isCardClicked(dish.id, false, true)}
+              isClicked={isCardClicked(dish.id, false, true, false)}
               onClick={() => handleCardClick(dish)}
             />
           ))}

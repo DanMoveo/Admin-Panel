@@ -16,7 +16,6 @@ export const generateInitialRestaurant = (): Restaurant => ({
   dishes: [],
 });
 
-
 export const fetchRestaurants = async () => {
   try {
     const response = await axios.get(`${API_BASE_URL}/restaurants?page=1&pageSize=200`);

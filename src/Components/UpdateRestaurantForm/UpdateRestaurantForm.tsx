@@ -23,7 +23,7 @@ const UpdateRestaurantForm: React.FC<UpdateRestaurantFormProps> = ({
   return (
     <>
       <div className="actionContainer">
-        <span className="actionTitle">Update</span>
+        <span className="actionTitle">Update the select restaurant</span>
         <div className="newRestaurant">
           <div className="textFieldsRestaurant">
             <input

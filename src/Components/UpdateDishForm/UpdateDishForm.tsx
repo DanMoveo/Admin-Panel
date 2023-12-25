@@ -24,7 +24,7 @@ const UpdateDishForm: React.FC<UpdateDishFormProps> = ({
   return (
     <>
       <div className="actionContainer">
-        <span className="actionTitel">Update</span>
+        <span className="actionTitel">Update the select dish</span>
         <div className="newRestaurant">
           <div className="textFieldsRestaurant">
             <input
