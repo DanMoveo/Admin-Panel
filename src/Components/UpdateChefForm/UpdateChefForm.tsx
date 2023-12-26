@@ -15,7 +15,7 @@ const UpdateChefForm: React.FC<UpdateChefFormProps> = ({
   return (
     <>
       <div className="actionContainer">
-        <span className="actionTitel">Update the select chef</span>
+        <span className="actionTitel">Update the selected chef</span>
         <div className="newRestaurant">
           <div className="textFieldsRestaurant">
             <input

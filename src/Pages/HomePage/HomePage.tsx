@@ -8,12 +8,14 @@ import {
   Chef,
   Dish,
   DecodedToken,
+  Restaurant2,
 } from "../../models/Restaurant.interfaces";
 import {
   createRestaurant,
   deleteRestaurant,
   fetchRestaurants,
   generateInitialRestaurant,
+  generateInitialRestaurant2,
 } from "../../services/Restaurant.service";
 import { jwtDecode } from "jwt-decode";
 import {
@@ -60,12 +62,15 @@ function HomePage() {
   );
   const [newChef, setNewChef] = useState<Chef>(generateInitialChef);
   const [newDish, setNewDish] = useState<Dish>(generateInitialDish);
-  const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant>(
-    generateInitialRestaurant
+  const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant2>(
+    generateInitialRestaurant2
   );
   const [selectedChef, setSelectedChef] = useState<Chef>(generateInitialChef);
   const [selectedDish, setSelectedDish] = useState<Dish>(generateInitialDish);
   const navigate = useNavigate();
+  const [selectedDishesValues, setSelectedDishesValues] = useState<string[]>(
+    []
+  );
 
   useEffect(() => {
     const token = localStorage.getItem("token") as string;
@@ -88,7 +93,7 @@ function HomePage() {
     }
     fetchChefs();
     fetchData(activeTab);
-  }, [activeTab]);
+  }, [activeTab, navigate]);
 
   const fetchData = async (tabIndex: number) => {
     try {
@@ -97,18 +102,6 @@ function HomePage() {
         case 0: // Restaurants
           data = await fetchRestaurants();
           setRestaurants(data);
-          // const res: Restaurant2[] = data;
-
-          // const transformedData: any[] = res.map(restaurant => ({
-          //   image: restaurant.image,
-          //   name: restaurant.name,
-          //   chefId: restaurant.chefId.id, 
-          //   rate: restaurant.rate,
-          //   dishes: restaurant.dishes.map(dish => dish._id), 
-          // }));
-
-          // console.log(transformedData)     
-
           break;
         case 1: // Chefs
           data = await fetchChefs();
@@ -130,7 +123,7 @@ function HomePage() {
     setActiveTab(index);
   };
 
-  const handleCardClick = async (item: Restaurant | Chef | Dish) => {
+  const handleCardClick = async (item: Restaurant2 | Chef | Dish) => {
     setClickedDivId(item.id);
     if ("chefId" in item) {
       // It's a restaurant
@@ -361,7 +354,10 @@ function HomePage() {
           name: selectedRestaurant.name,
           chefId: selectedRestaurant.chefId.id,
           rate: selectedRestaurant.rate,
-          dishes: selectedRestaurant.dishes,
+          dishes: [
+            ...selectedRestaurant.dishes.map((dish) => dish._id),
+            ...selectedDishesValues,
+          ],
         };
         console.log(updatedRestaurantData);
         const restaurantResponse = await fetch(
@@ -411,7 +407,7 @@ function HomePage() {
 
           if (isRestaurantDeleted) {
             alert("Restaurant deleted successfully");
-            setSelectedRestaurant(generateInitialRestaurant());
+            setSelectedRestaurant(generateInitialRestaurant2());
             fetchData(activeTab);
           } else {
             alert("Failed to delete restaurant");
@@ -509,6 +505,8 @@ function HomePage() {
                         handleUpdateClick={handleUpdateClick}
                         setSelectedRestaurant={setSelectedRestaurant}
                         clickedDivId={clickedDivId}
+                        selectedDishesValues={selectedDishesValues}
+                        setSelectedDishesValues={setSelectedDishesValues}
                       />
                     )}
                   </>

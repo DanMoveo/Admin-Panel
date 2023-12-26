@@ -24,7 +24,7 @@ const UpdateDishForm: React.FC<UpdateDishFormProps> = ({
   return (
     <>
       <div className="actionContainer">
-        <span className="actionTitel">Update the select dish</span>
+        <span className="actionTitel">Update the selected dish</span>
         <div className="newRestaurant">
           <div className="textFieldsRestaurant">
             <input
@@ -52,9 +52,9 @@ const UpdateDishForm: React.FC<UpdateDishFormProps> = ({
               }
             />
             <select
+              value={selectedDish.category}
               name="category"
               placeholder="Image"
-              value={selectedDish.category}
               onChange={(e) => handleInputChange(e, "dish")}
             >
               <option value="" disabled hidden>

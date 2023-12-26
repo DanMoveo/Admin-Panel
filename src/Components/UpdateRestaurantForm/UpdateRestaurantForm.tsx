@@ -1,14 +1,16 @@
 import React from "react";
-import { Chef, Dish, Restaurant } from "../../models/Restaurant.interfaces";
+import { Chef, Dish, Restaurant2 } from "../../models/Restaurant.interfaces";
 
 interface UpdateRestaurantFormProps {
-  selectedRestaurant: Restaurant;
+  selectedRestaurant: Restaurant2;
   allChefs: Chef[];
   allDishes: Dish[];
   allDishes2: Dish[];
   handleUpdateClick: (param1: boolean, param2: boolean) => void;
-  setSelectedRestaurant: React.Dispatch<React.SetStateAction<Restaurant>>;
+  setSelectedRestaurant: React.Dispatch<React.SetStateAction<Restaurant2>>;
   clickedDivId: string | null;
+  selectedDishesValues: string[];
+  setSelectedDishesValues: React.Dispatch<React.SetStateAction<string[]>>;
 }
 
 const UpdateRestaurantForm: React.FC<UpdateRestaurantFormProps> = ({
@@ -19,11 +21,13 @@ const UpdateRestaurantForm: React.FC<UpdateRestaurantFormProps> = ({
   setSelectedRestaurant,
   clickedDivId,
   allDishes2,
+  selectedDishesValues,
+  setSelectedDishesValues,
 }) => {
   return (
     <>
       <div className="actionContainer">
-        <span className="actionTitle">Update the select restaurant</span>
+        <span className="actionTitle">Update the selected restaurant</span>
         <div className="newRestaurant">
           <div className="textFieldsRestaurant">
             <input
@@ -99,21 +103,21 @@ const UpdateRestaurantForm: React.FC<UpdateRestaurantFormProps> = ({
             <select
               className="custom-select"
               name="dishes"
-              value={selectedRestaurant.dishes}
+              value={[
+                ...selectedRestaurant.dishes.map((dish) => dish._id),
+                ...selectedDishesValues,
+              ]}
               onChange={(e) => {
-                const selectedDishId = e.target.value;
-                if (selectedRestaurant.dishes.includes(selectedDishId)) {
-                  setSelectedRestaurant((prevRestaurant) => ({
-                    ...prevRestaurant,
-                    dishes: prevRestaurant.dishes.filter(
-                      (id) => id !== selectedDishId
-                    ),
-                  }));
+                const newValue = e.target.value;
+                if (selectedDishesValues.includes(newValue)) {
+                  setSelectedDishesValues((prevValues) =>
+                    prevValues.filter((value) => value !== newValue)
+                  );
                 } else {
-                  setSelectedRestaurant((prevRestaurant) => ({
-                    ...prevRestaurant,
-                    dishes: [...prevRestaurant.dishes, selectedDishId],
-                  }));
+                  setSelectedDishesValues((prevValues) => [
+                    ...prevValues,
+                    newValue,
+                  ]);
                 }
               }}
               multiple

@@ -1,4 +1,4 @@
-import { Restaurant } from "../models/Restaurant.interfaces";
+import { Restaurant, Restaurant2 } from "../models/Restaurant.interfaces";
 import axios from "axios";
 
 const API_BASE_URL = "http://localhost:5000";
@@ -15,6 +15,20 @@ export const generateInitialRestaurant = (): Restaurant => ({
   rate: 0,
   dishes: [],
 });
+
+export const generateInitialRestaurant2 = (): Restaurant2 => ({
+  id: "",
+  image: "",
+  name: "",
+  chefId: {
+    id: "",
+    name: "",
+    image: "",
+  },
+  rate: 0,
+  dishes: [],
+});
+
 
 export const fetchRestaurants = async () => {
   try {
